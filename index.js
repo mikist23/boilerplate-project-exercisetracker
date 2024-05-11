@@ -60,7 +60,24 @@ app.get('/api/users', async (req, res) => {
 });
 
 
-
+// Log Exercise for a User
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  try {
+    const { description, duration, date } = req.body;
+    const userId = req.params._id;
+    const exercise = new Exercise({ userId, description, duration, date });
+    await exercise.save();
+    res.json({ 
+      username: exercise.username,
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date.toDateString(),
+      _id: exercise._id 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
