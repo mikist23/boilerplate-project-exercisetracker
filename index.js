@@ -37,7 +37,17 @@ const exerciseSchema = new Schema({
 const User = mongoose.model('User', userSchema);
 const Exercise = mongoose.model('Exercise', exerciseSchema)
 
-
+// Create a New User
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username } = req.body;
+    const user = new User({ username });
+    await user.save();
+    res.json({ username: user.username, _id: user._id });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
