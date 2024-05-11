@@ -21,6 +21,22 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 const { Schema } = mongoose;
 
 
+// User schema
+const userSchema = new Schema({
+  username: String
+});
+
+// Exercise schema
+const exerciseSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: 'User' },
+  description: String,
+  duration: Number,
+  date: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
+const Exercise = mongoose.model('Exercise', exerciseSchema)
+
 
 
 
