@@ -59,7 +59,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-
 // Log Exercise for a User
 app.post('/api/users/:_id/exercises', async (req, res) => {
   try {
@@ -67,17 +66,26 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     const userId = req.params._id;
     const exercise = new Exercise({ userId, description, duration, date });
     await exercise.save();
-    res.json({ 
-      username: exercise.username,
-      description: exercise.description,
-      duration: exercise.duration,
+    
+    // Fetch user data
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Respond with user object with exercise fields added
+    res.json({
+      _id: user._id,
+      username: user.username,
       date: exercise.date.toDateString(),
-      _id: exercise._id 
+      duration: exercise.duration,
+      description: exercise.description,
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 // Retrieve Full Exercise Log of a User
@@ -93,49 +101,22 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       if (from) query.date.$gte = new Date(from);
       if (to) query.date.$lte = new Date(to);
     }
-
+   // Fetch user data
+   const user = await User.findById(userId);
+   if (!user) {
+     return res.status(404).json({ error: 'User not found' });
+   }
     let exercises = await Exercise.find(query).limit(parseInt(limit));
 
     res.json({
       _id: userId,
+      username: user.username,
       count: exercises.length,
       log: exercises.map(exercise => ({
         description: exercise.description,
         duration: exercise.duration,
         date: exercise.date.toDateString()
       }))
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Log Exercise for a User
-app.post('/api/users/:_id/exercises', async (req, res) => {
-  try {
-    const { description, duration, date } = req.body;
-    const userId = req.params._id;
-    
-    // Find the user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Create new exercise
-    const exercise = new Exercise({ userId, description, duration, date });
-    await exercise.save();
-
-    // Update user's exercise log
-    user.exercises.push(exercise._id);
-    await user.save();
-
-    res.json({ 
-      username: user.username,
-      description: exercise.description,
-      duration: exercise.duration,
-      date: exercise.date.toDateString(),
-      _id: exercise._id 
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
