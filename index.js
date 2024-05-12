@@ -80,6 +80,68 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 });
 
 
+// Retrieve Full Exercise Log of a User
+app.get('/api/users/:_id/logs', async (req, res) => {
+  try {
+    const userId = req.params._id;
+    let { from, to, limit } = req.query;
+
+    const query = { userId };
+
+    if (from || to) {
+      query.date = {};
+      if (from) query.date.$gte = new Date(from);
+      if (to) query.date.$lte = new Date(to);
+    }
+
+    let exercises = await Exercise.find(query).limit(parseInt(limit));
+
+    res.json({
+      _id: userId,
+      count: exercises.length,
+      log: exercises.map(exercise => ({
+        description: exercise.description,
+        duration: exercise.duration,
+        date: exercise.date.toDateString()
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Log Exercise for a User
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  try {
+    const { description, duration, date } = req.body;
+    const userId = req.params._id;
+    
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create new exercise
+    const exercise = new Exercise({ userId, description, duration, date });
+    await exercise.save();
+
+    // Update user's exercise log
+    user.exercises.push(exercise._id);
+    await user.save();
+
+    res.json({ 
+      username: user.username,
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date.toDateString(),
+      _id: exercise._id 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
 })
